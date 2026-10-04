@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第七お手続き課</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=BIZ+UDPMincho:wght@400;700&family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* Layout: 役所の申請用紙を模した一枚の紙が中央にあり、その周囲を邪魔な帯・吹き出し・タイマーが取り囲む。わざと不親切だが、紙そのものは丁寧に組む。単一テーマ。 */
+:root{
+  --desk:#c9d6cc;
+  --paper:#fbfbf7;
+  --rule:#9db0a3;
+  --ink:#1f2a24;
+  --stamp:#c8311f;
+  --mute:#6d7a71;
+  --warn:#f2d64b;
+  --head:"Dela Gothic One","Hiragino Sans",sans-serif;
+  --form:"BIZ UDPMincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --ui:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--desk);color:var(--ink)}
+body{font-family:var(--ui);min-height:100vh;padding-inline:16px;padding-block:72px 120px;
+  background-image:radial-gradient(rgba(31,42,36,.07) 1px,transparent 1px);background-size:14px 14px}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;gap:10px;align-items:center;
+  padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--ink);color:var(--paper);font-size:13px;flex-wrap:wrap}
+.topbar b{font-family:var(--head);font-weight:400;letter-spacing:.08em}
+.clock{font-variant-numeric:tabular-nums;letter-spacing:.1em}
+.doom{background:var(--warn);color:var(--ink);padding:3px 10px;border-radius:2px;font-weight:700;font-variant-numeric:tabular-nums}
+.paper{max-width:620px;margin:0 auto;background:var(--paper);padding:28px clamp(18px,5vw,40px) 36px;position:relative;
+  box-shadow:0 1px 0 rgba(0,0,0,.05),0 20px 40px rgba(31,42,36,.18);border-top:6px solid var(--ink)}
+.no{position:absolute;top:14px;right:18px;font-family:var(--form);font-size:12px;color:var(--mute);letter-spacing:.1em}
+.step{font-family:var(--form);font-size:13px;color:var(--mute);letter-spacing:.2em;margin:0 0 6px}
+h1,h2{font-family:var(--head);font-weight:400;margin:0 0 18px;text-wrap:balance;line-height:1.25}
+h1{font-size:clamp(30px,7vw,46px)}
+h2{font-size:clamp(22px,5vw,30px)}
+p{line-height:1.8;margin:0 0 14px;max-width:62ch}
+.field{display:grid;gap:6px;padding:14px 0;border-bottom:1px dashed var(--rule)}
+.field label,.legend{font-family:var(--form);font-weight:700;font-size:15px}
+.field small{font-size:12px;color:var(--mute);line-height:1.6}
+input[type=text],select{font:inherit;font-family:var(--form);font-size:16px;padding:10px 12px;border:1.5px solid var(--rule);background:#fff;color:var(--ink);border-radius:0;width:100%}
+input[type=text]:focus,select:focus{outline:3px solid var(--warn);border-color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--stamp)}
+.err{color:var(--stamp);font-size:13px;font-weight:700;min-height:1em;line-height:1.6}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.check{display:flex;gap:10px;align-items:flex-start;font-family:var(--form);font-size:14px;line-height:1.6}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--ink);flex:none}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:24px;position:relative;min-height:72px;flex-wrap:wrap}
+.big{font-family:var(--head);font-size:20px;padding:16px 28px;background:var(--stamp);color:var(--paper);border:none;cursor:pointer;letter-spacing:.06em;box-shadow:0 4px 0 #7d1d12}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 #7d1d12}
+.small{font-family:var(--ui);font-size:12px;padding:6px 10px;background:transparent;color:var(--mute);border:1px solid var(--rule);cursor:pointer;transition:left .18s,top .18s,transform .18s;position:relative}
+button:focus-visible,a:focus-visible{outline:3px solid var(--warn);outline-offset:3px}
+.sneaky{color:var(--ink);text-decoration:underline dotted;cursor:pointer;background:none;border:none;font:inherit;padding:0}
+.rules{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}
+.rules li{font-size:13px;padding:8px 10px;border-left:4px solid var(--stamp);background:rgba(200,49,31,.07);line-height:1.5}
+.rules li.ok{border-color:var(--ink);background:rgba(31,42,36,.05);color:var(--mute)}
+.rules li.ok::before{content:"済　";font-weight:700;color:var(--ink)}
+.rules li:not(.ok)::before{content:"未　";font-weight:700;color:var(--stamp)}
+.year{font-family:var(--head);font-size:28px;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:330px}
+.tile{aspect-ratio:1;max-width:100%;border:1.5px solid var(--rule);background:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+.tile i{display:block;width:46%;height:46%;background:var(--ink)}
+.tile[aria-pressed="true"]{outline:4px solid var(--stamp);outline-offset:-4px;background:rgba(200,49,31,.08)}
+.stamp{display:inline-grid;place-items:center;width:120px;height:120px;border:4px solid var(--stamp);border-radius:50%;
+  color:var(--stamp);font-family:var(--head);font-size:26px;transform:rotate(-12deg);margin:6px 0 18px;animation:thunk .5s cubic-bezier(.3,1.6,.5,1) both}
+.stats{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font-family:var(--form);margin:0 0 20px}
+.stats dd{margin:0;font-variant-numeric:tabular-nums;font-weight:700}
+.banner{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink);color:var(--paper);
+  padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;gap:12px 18px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:14px;line-height:1.6}
+.banner p{margin:0;max-width:52ch}
+.banner .big{font-size:16px;padding:12px 20px}
+.banner .small{color:var(--paper);border-color:rgba(251,251,247,.4)}
+.help{position:fixed;right:16px;bottom:24px;z-index:25;width:min(300px,calc(100vw - 32px));background:var(--warn);color:var(--ink);
+  padding:16px 16px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:14px;line-height:1.7;transform-origin:bottom right;transition:transform .3s}
+.help.grow{transform:scale(1.35)}
+.help h3{font-family:var(--head);font-weight:400;font-size:17px;margin:0 0 6px}
+.help .x{position:absolute;top:3px;right:5px;font-size:10px;width:16px;height:16px;line-height:14px;padding:0;border:1px solid rgba(31,42,36,.4);background:transparent;cursor:pointer;color:var(--ink)}
+.help .more{margin-top:8px;font-family:var(--head);font-size:15px;background:var(--ink);color:var(--warn);border:none;padding:10px 14px;cursor:pointer;width:100%}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:40;background:var(--stamp);color:var(--paper);padding:10px 16px;font-weight:700;font-size:14px;max-width:calc(100vw - 32px);text-align:center}
+@keyframes thunk{from{transform:rotate(-12deg) scale(2.2);opacity:0}}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.shake{animation:shake .35s}
+@media (prefers-reduced-motion:reduce){.stamp,.shake{animation:none}.small,.help{transition:none}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <b>第七お手続き課</b>
+  <span class="clock">経過 <span id="clock">00:00</span>　やらかし <span id="miss">0</span>回</span>
+  <span class="doom" id="doom" hidden>あと <span id="doomN">60</span> 秒で入力内容が消えます</span>
+</div>
+
+<main class="paper" id="paper" aria-live="polite"></main>
+
+<div class="banner" id="banner">
+  <p>当窓口は、あなたの体験を向上させないために、ありとあらゆるものを利用します。</p>
+  <button class="big" type="button" id="bAll">すべて受け入れる</button>
+  <button class="small" type="button" id="bNo">受け入れないことを受け入れる</button>
+</div>
+
+<aside class="help" id="help" hidden role="dialog" aria-label="お困りですか">
+  <button class="x" type="button" id="helpX" aria-label="閉じる">×</button>
+  <h3>お困りですか？</h3>
+  <p id="helpText" style="margin:0">当課の手続きは大変わかりやすいと評判です（当課調べ）。</p>
+  <button class="more" type="button" id="helpMore">閉じる</button>
+</aside>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+const $=s=>document.querySelector(s);
+const paper=$('#paper');
+let t0=null, miss=0, step=0, helpTimer=null, doomTimer=null;
+const S={};
+
+/* ---- 共通 ---- */
+function oops(el,msg){
+  miss++; $('#miss').textContent=miss;
+  if(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+  if(msg) toast(msg);
+}
+let toastT;
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600);}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');}
+setInterval(()=>{if(t0)$('#clock').textContent=fmt((Date.now()-t0)/1000);},500);
+
+/* 逃げるボタン：マウスでは近づくと3回逃げる。タッチは2回だけ位置が変わる。キーボード操作では逃げない */
+function dodgy(btn,box,times){
+  let left=times;
+  const move=()=>{
+    const bw=box.clientWidth-btn.offsetWidth, x=Math.random()*Math.max(0,bw);
+    btn.style.position='absolute'; btn.style.left=x+'px'; btn.style.top=(Math.random()*30)+'px';
+  };
+  btn.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'&&left>0){left--;move();}});
+  btn.addEventListener('click',e=>{
+    if(e.detail!==0 && left>0 && e.pointerType!=='mouse'){left--;move();e.stopImmediatePropagation();toast('もう一度どうぞ');}
+  },true);
+}
+
+/* 吹き出しヘルプ */
+const HELP=['当課の手続きは大変わかりやすいと評判です（当課調べ）。','「次へ」は少し恥ずかしがり屋です。何度か近づいてあげてください。','合言葉は、規則をすべて満たせば必ず通ります。規則はあとから増えます。','四角は、まっすぐなものだけが正しい四角です。'];
+function scheduleHelp(ms){clearTimeout(helpTimer);helpTimer=setTimeout(()=>{$('#helpText').textContent=HELP[Math.min(step,HELP.length-1)];$('#help').hidden=false;},ms);}
+$('#helpX').onclick=()=>{$('#help').hidden=true;$('#help').classList.remove('grow');scheduleHelp(25000);};
+$('#helpMore').onclick=()=>{$('#help').classList.add('grow');$('#helpText').textContent='この吹き出しを閉じるには、右上の小さい×を押してください。この大きな「閉じる」は飾りです。';};
+
+/* 偽の消滅タイマー */
+function startDoom(){
+  let n=60;$('#doom').hidden=false;$('#doomN').textContent=n;
+  clearInterval(doomTimer);
+  doomTimer=setInterval(()=>{n--; if(n<=0){toast('冗談です。何も消えません。もう一度最初から数えます。');n=60;} $('#doomN').textContent=n;},1000);
+}
+
+/* ---- 同意帯 ---- */
+$('#bAll').onclick=()=>{toast('受け入れていただきありがとうございます。なお、実際には何も保存していません。');$('#banner').hidden=true;};
+$('#bNo').onclick=()=>{
+  const b=$('#banner');
+  if(!S.bannerTwice){S.bannerTwice=true;b.querySelector('p').textContent='本当に受け入れないことを受け入れないのですか？';$('#bAll').textContent='いいえ';$('#bNo').textContent='いいえ、ではない';}
+  else{b.hidden=true;toast('お手続きの意思を確認しました。');}
+};
+
+/* ---- 第0面 表紙 ---- */
+function s0(){
+  step=0;
+  paper.innerHTML=`
+  <span class="no">様式 第七号</span>
+  <p class="step">ようこそ</p>
+  <h1>あなたは、ここで<br>手続きをします。</h1>
+  <p>第七お手続き課では、何の手続きなのかを説明しない方針を採用しています。所要時間はおおむね数分、ただし個人差がたいへん大きいです。</p>
+  <p>はじめる方は<button class="sneaky" id="go" type="button">こちら</button>から。下の大きなボタンは、ご覧のとおり大きいボタンです。</p>
+  <div class="actions"><button class="big" type="button" id="noStart">はじめない</button></div>`;
+  $('#noStart').onclick=e=>{oops(e.target,'はじめない、を選びました。はじめないので、何も起きません。');};
+  $('#go').onclick=()=>{t0=Date.now();scheduleHelp(9000);s1();};
+}
+
+/* ---- 第1面 名前 ---- */
+function s1(){
+  step=1;
+  paper.innerHTML=`
+  <span class="no">様式 第七号の一</span>
+  <p class="step">一枚目 ／ 三枚</p>
+  <h2>お名前をうかがいます</h2>
+  <div class="field"><label for="nm">お名前</label>
+    <input type="text" id="nm" value="ここにお名前を入れてください" autocomplete="off">
+    <small>上の文字は消えません。ご自分で消してください。</small><span class="err" id="eNm"></span></div>
+  <div class="field"><label for="kana">ふりがな（カタカナ）</label>
+    <input type="text" id="kana" autocomplete="off"><span class="err" id="eKana"></span></div>
+  <div class="field"><span class="legend">規約</span>
+    <label class="check"><input type="checkbox" id="agree" checked> 規約に同意しないことに同意します</label>
+    <small>規約の本文はありません。</small><span class="err" id="eAg"></span></div>
+  <div class="actions" id="act1"><button class="big" type="button" id="back1">最初からやり直す</button><button class="small" type="button" id="next1">次へ</button></div>`;
+  $('#back1').onclick=e=>{oops(e.target);s0();};
+  dodgy($('#next1'),$('#act1'),3);
+  $('#next1').onclick=()=>{
+    let ok=true;
+    const nm=$('#nm').value.trim(), kana=$('#kana').value.trim();
+    $('#eNm').textContent=$('#eKana').textContent=$('#eAg').textContent='';
+    if(!nm||nm.includes('ここに')||nm.includes('入れてください')){$('#eNm').textContent='「ここにお名前を入れてください」さんは、すでに登録済みです。';ok=false;}
+    if(!kana){$('#eKana').textContent='ふりがなをご記入ください。';ok=false;}
+    else if(!/^[ぁ-ゖー\s　]+$/.test(kana)){$('#eKana').textContent='ふりがなは、ひらがなでご記入ください。（カタカナと書いてあるのは誤植です）';ok=false;}
+    if($('#agree').checked){$('#eAg').textContent='同意していただくには、チェックを外してください。';ok=false;}
+    if(!ok){oops(paper);return;}
+    S.name=nm; s2();
+  };
+}
+
+/* ---- 第2面 合言葉と生年 ---- */
+const RULES=[
+  ['8文字以上にしてください',v=>[...v].length>=8],
+  ['数字を1つ以上入れてください',v=>/\d/.test(v)],
+  ['ひらがなを入れてください',v=>/[ぁ-ゖ]/.test(v)],
+  ['「ねこ」という言葉を入れてください',v=>v.includes('ねこ')],
+  ['入れた数字の合計を10ちょうどにしてください',v=>(v.match(/\d/g)||[]).reduce((a,b)=>a+ +b,0)===10],
+  ['最後を「。」で終えてください',v=>v.endsWith('。')],
+];
+function s2(){
+  step=2; startDoom(); scheduleHelp(12000);
+  const months=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  const shuffled=months.map((m,i)=>[m,i+1]).sort(()=>Math.random()-.5);
+  paper.innerHTML=`
+  <span class="no">様式 第七号の二</span>
+  <p class="step">二枚目 ／ 三枚</p>
+  <h2>${S.name.replace(/[<>&"]/g,'')} 様の合言葉</h2>
+  <div class="field"><label for="pw">合言葉</label>
+    <small>遊びの合言葉です。ほかで使っている大事な文字列は入れないでください。</small>
+    <input type="text" id="pw" autocomplete="off" spellcheck="false">
+    <ul class="rules" id="rules"></ul></div>
+  <div class="field"><label for="yr">お生まれの年（西暦）</label>
+    <div class="year" id="yrOut">1</div>
+    <input type="range" id="yr" min="1" max="3000" value="1" step="1">
+    <small>つまみは一年ずつ動きます。がんばってください。矢印キーも使えます。</small></div>
+  <div class="field"><label for="mo">お生まれの月</label>
+    <select id="mo"><option value="">選んでください</option>${shuffled.map(([m,v])=>`<option value="${v}">${m}</option>`).join('')}</select>
+    <small>並び順は毎回ちがいます。</small></div>
+  <span class="err" id="e2"></span>
+  <div class="actions" id="act2"><button class="big" type="button" id="back2">一枚目に戻る</button><button class="small" type="button" id="next2">これで、よし</button></div>`;
+  const pw=$('#pw'), ul=$('#rules');
+  const render=()=>{
+    const v=pw.value; let html='';
+    for(const [txt,fn] of RULES){const ok=fn(v);html+=`<li class="${ok?'ok':''}">${txt}</li>`;if(!ok)break;}
+    ul.innerHTML=html;
+  };
+  pw.addEventListener('input',render); render();
+  const yr=$('#yr'); yr.oninput=()=>{$('#yrOut').textContent=yr.value;};
+  $('#back2').onclick=e=>{oops(e.target);s1();};
+  $('#next2').onclick=()=>{
+    const v=pw.value, y=+yr.value, m=$('#mo').value, e=$('#e2');
+    const failed=RULES.findIndex(([,fn])=>!fn(v));
+    if(failed>=0){e.textContent='合言葉の規則をまだ満たしていません。';oops(paper);return;}
+    if(y>2026){e.textContent=`西暦${y}年は、まだ来ていません。`;oops(paper);return;}
+    if(y<1900){e.textContent=`西暦${y}年生まれの方は、窓口で直接ご相談ください（窓口はありません）。`;oops(paper);return;}
+    if(!m){e.textContent='月をお選びください。';oops(paper);return;}
+    s3();
+  };
+}
+
+/* ---- 第3面 まっすぐな四角 ---- */
+function s3(){
+  step=3; scheduleHelp(10000);
+  paper.innerHTML=`
+  <span class="no">様式 第七号の三</span>
+  <p class="step">三枚目 ／ 三枚</p>
+  <h2>あなたが人間であることを確かめます</h2>
+  <p>まっすぐな四角を、<b>すべて</b>選んでください。少しでも傾いている四角は、四角として認められません。</p>
+  <div class="grid" id="grid"></div>
+  <span class="err" id="e3"></span>
+  <div class="actions"><button class="big" type="button" id="skip">人間ではありません</button><button class="small" type="button" id="verify">確認する</button></div>`;
+  deal();
+  $('#skip').onclick=e=>{oops(e.target,'正直なお答えありがとうございます。人間の方のみ手続きできます。');};
+  $('#verify').onclick=()=>{
+    const tiles=[...document.querySelectorAll('.tile')];
+    const ok=tiles.every(t=>(t.dataset.straight==='1')===(t.getAttribute('aria-pressed')==='true'));
+    if(ok) done(); else{$('#e3').textContent='ちがいます。四角を入れ替えました。';oops(paper);deal();}
+  };
+}
+function deal(){
+  const g=$('#grid'); g.innerHTML='';
+  const n=9, straight=new Set(); while(straight.size<3+Math.floor(Math.random()*3)) straight.add(Math.floor(Math.random()*n));
+  for(let i=0;i<n;i++){
+    const s=straight.has(i), ang=s?0:(Math.random()<.5?-1:1)*(4+Math.random()*10);
+    const b=document.createElement('button');b.type='button';b.className='tile';b.dataset.straight=s?'1':'0';b.setAttribute('aria-pressed','false');
+    b.setAttribute('aria-label',`四角 ${i+1}`);
+    b.innerHTML=`<i style="transform:rotate(${ang.toFixed(1)}deg)"></i>`;
+    b.onclick=()=>b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');
+    g.appendChild(b);
+  }
+}
+
+/* ---- 完了 ---- */
+function done(){
+  step=4; clearInterval(doomTimer); clearTimeout(helpTimer); $('#doom').hidden=true; $('#help').hidden=true;
+  const sec=(Date.now()-t0)/1000;
+  const grade = miss===0?'模範的な申請者':miss<5?'よく訓練された申請者':miss<12?'たくましい申請者':'不屈の申請者';
+  paper.innerHTML=`
+  <span class="no">様式 第七号 完了</span>
+  <div class="stamp">受理</div>
+  <h2>お手続きが完了しました</h2>
+  <p>何の手続きだったかは、引き続きお知らせしません。入力された内容はこの画面の中だけで使い、どこにも送っていません。</p>
+  <dl class="stats"><dt>所要時間</dt><dd>${fmt(sec)}</dd><dt>やらかし</dt><dd>${miss} 回</dd><dt>認定</dt><dd>${grade}</dd></dl>
+  <div class="actions"><button class="big" type="button" id="again">もう一度、手続きする</button></div>`;
+  $('#again').onclick=()=>{miss=0;$('#miss').textContent=0;$('#clock').textContent='00:00';t0=null;s0();};
+}
+
+s0();
+})();
+</script>
+</body>
+</html>
